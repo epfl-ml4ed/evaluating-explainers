@@ -6,14 +6,6 @@
 # Side note: This notebook takes 1 hour and half on google colab. Running it locally took near 7 hours. So, I suggest running it on colab.
 # 
 
-# In[ ]:
-
-
-# In[ ]:
-
-# In[ ]:
-
-
 import lime
 from lime import lime_tabular
 import numpy as np

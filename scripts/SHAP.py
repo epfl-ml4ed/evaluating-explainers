@@ -301,30 +301,10 @@ Background_distribution = shap.utils.sample(features, 100)
 instances = features.iloc[num_instances]
 explainer = shap.PermutationExplainer(predict_fn, Background_distribution)
 shap_values = explainer(instances, max_evals=1500)
-
-
-# In[ ]:
-
-
-# the waterfall_plot shows how we get from shap_values.base_values to model.predict(X)[sample_ind]
-waterfall_all(shap_values,num_instances,features,y,'r',max_display=15)
-
-
-# In[ ]:
-
-
 shaps = [[0.0 if np.isnan(x) else x for x in s] for s in shap_values.values]
-
-
-# In[ ]:
-
 
 shap.initjs()
 forceplot_all(shap_values,num_instances,features,y,'p','r',max_display=15)
-
-
-# In[ ]:
-
 
 shap.plots.beeswarm(shap_values, max_display=14,show=False)
 locs, labels = plt.yticks()  # Get the current locations and labels.

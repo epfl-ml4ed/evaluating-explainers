@@ -9,29 +9,16 @@
 # 
 # Below we show how counterfactuals can be used to provide local feature importance scores for any input, and how those scores can be combined to yield a global importance score for each feature.
 
-# In[ ]:
-
-# In[ ]:
-
-
 from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import pandas as pd
 import dice_ml
 from dice_ml import Dice
-from dice_ml.utils import helpers  # helper functions
 import matplotlib.pyplot as pyplot
 import seaborn as sns
 import tensorflow as tf
 import json
-
-
-# In[ ]:
-
 
 
 
@@ -208,11 +195,6 @@ for i in np.arange(num_weeks):
     feature_names.append(feature_type_name_with_weeks)
 feature_names = np.concatenate(feature_names, axis=0)
 feature_names = feature_names.reshape(-1)
-#print(feature_names)
-
-
-# In[ ]:
-
 
 target = y
 features = features.reshape(features.shape[0],-1)
@@ -224,21 +206,11 @@ numeric_transformer = Pipeline(steps=[('scaler', StandardScaler())])
 transformations = ColumnTransformer(
     transformers=[('num', numeric_transformer, numerical)])
 
-
-# In[ ]:
-
-
 features['result'] = target
-
-
-# In[ ]:
 
 
 loaded_model = tf.keras.models.load_model("./lstm_bi_"+course+"_new")
 print('loaded model')
-
-# In[ ]:
-
 
 backend = 'TF'+tf.__version__[0]
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)

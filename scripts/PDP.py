@@ -21,7 +21,7 @@ week_type = 'eq_week'
 feature_types = [ "boroujeni_et_al", "chen_cui", "marras_et_al", "lalle_conati"]
 course = 'dsp_001'
 remove_obvious = True
-
+run_ice_plots = False
 
 # In[ ]:
 
@@ -386,7 +386,6 @@ for i in np.arange(num_weeks):
     feature_names.append(feature_type_name_with_weeks)
 feature_names = np.concatenate(feature_names, axis=0)
 feature_names = feature_names.reshape(-1)
-# print(feature_names)
 features.columns = feature_names
 
 
@@ -400,8 +399,6 @@ for i,feature_type in enumerate(feature_types):
 print(num_feature_type)
 
 # ## Making a predict_proba
-
-# In[ ]:
 
 
 
@@ -423,10 +420,8 @@ def transform_x(x, num_feature_type, num_weeks, features_min, features_max):
     )
     x = feature_norm[: feature_norm.shape[0] - 1, :]
     return x
-# In[ ]:
 
 print(features.shape)
-# EDIT HERE FOR OTHER MODELS
 model_name = "lstm_bi_"+course+"_new"
 loaded_model = keras.models.load_model(model_name)
 
@@ -439,30 +434,7 @@ predict_fn = lambda x: np.array([1-loaded_model.predict(transform_x(x,num_featur
 
 Background_distribution = shap.utils.sample(features, 8500)
 
-
-# In[ ]:
-
-
-# # splime permutation:
-
-# In[ ]:
-
-
-# file = './top_features_permutation_splime.json'
-# # file = './eq_results/SHAP/'+course+'/Permutation/plots/top_features_permutation_splime.json'
-# with open(file, 'r') as f:
-#     top_features = json.load(f)
-# print(top_features)
-# print(feature_names)
-# print(((set(top_features))&(set(feature_names))))
-
-# # In[ ]:
-
-
 top_features = feature_names
-
-
-# In[ ]:
 
 
 for i,f in enumerate(top_features):
@@ -475,37 +447,12 @@ for i,f in enumerate(top_features):
   pyplot.show()
 
 
-# # splime kernel:
-
-# In[ ]:
-
-
-# file = './top_features_kernel_splime.json'
-# with open(file, 'r') as f:
-#     top_features = json.load(f)
-
-
-# # In[ ]:
-
-
-# top_features = feature_
-
-
-# In[ ]:
-
-
-for f in top_features:
-  fig = shap.plots.partial_dependence(
-      f, predict_fn,Background_distribution , ice=True,
-      model_expected_value=True, feature_expected_value=True,show=False
-  )
-  pyplot.title('Partial dependence plot for '+f)
-  pyplot.savefig("./uniform_eq_results/PDP/" + course + "/Kernel/plots/"+"PDPwithICE_"+f+".png", bbox_inches = 'tight')
-  pyplot.show()
-
-
-# In[ ]:
-
-
-
-
+if run_ice_plots:
+    for f in top_features:
+    fig = shap.plots.partial_dependence(
+        f, predict_fn,Background_distribution , ice=True,
+        model_expected_value=True, feature_expected_value=True,show=False
+    )
+    pyplot.title('Partial dependence plot for '+f)
+    pyplot.savefig("./uniform_eq_results/PDP/" + course + "/Kernel/plots/"+"PDPwithICE_"+f+".png", bbox_inches = 'tight')
+    pyplot.show()
