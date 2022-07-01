@@ -16,7 +16,6 @@ We use Principal Component Analysis, Jensen-Shannon distance, and Spearman's ran
 
 0. Install relevant dependencies with `pip install -r requirements.txt`.
 
-To extract features of your own course from scratch: 
 1. Extract relevant features sets (`BouroujeniEtAl`, `MarrasEtAl`, `LalleConati`, and `ChenCui`) through the ML4ED lab's EDM 2021 contribution on [benchmarks for feature predictive power](https://github.com/epfl-ml4ed/flipped-classroom). Place the results of these feature extraction scripts in `data/`. A toy course example of extracted features is included in the `data/` folder.
 
 2. Fill out the `data/metadata.csv` file with relevant meta information about your course(s). One example of course metadata is currently showcased in the file. This information is necessary for extracting the meta features in the BTM and BSM models.
