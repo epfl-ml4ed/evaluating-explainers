@@ -1,8 +1,10 @@
 # evaluating-explainers
 
-This repository is the official implementation of the EDM 2022 Paper entitled "Evaluating the Explainers: A Comparison of Explainability Techniques for Black-Box Success Prediction in MOOCs" written by [Vinitra Swamy](http://github.com/vinitra), Bahar Radmehr, Natasa Krco, [Mirko Marras](https://www.mirkomarras.com/), and [Tanja Käser](https://people.epfl.ch/tanja.kaeser/?lang=en).
+This repository is the official implementation of the EDM 2022 Paper entitled "Evaluating the Explainers: A Comparison of Explainability Techniques for Black-Box Success Prediction in MOOCs" written by [Vinitra Swamy](http://github.com/vinitra), Bahar Radmehr, Natasa Krco, [Mirko Marras](https://www.mirkomarras.com/), and [Tanja Käser](https://people.epfl.ch/tanja.kaeser/?lang=en). This project started in the ML4ED laboratory at EPFL in May 2021.
 
-Experiments are located in `scripts/`, corresponding directly to the experimental methodology mentioned in the paper. **Note (1 Jul 2022): This version of the evaluating-explainers code is not fully cleaned and is subject to change and refactoring in the next months.**
+Experiments are located in `scripts/`, corresponding directly to the experimental methodology mentioned in the paper.  
+
+**July 1, 2022: This version of the evaluating-explainers code is not fully cleaned and is subject to change and refactoring in the next months.**
 
 ## Usage guide
 
