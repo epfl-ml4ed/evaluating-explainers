@@ -18,13 +18,11 @@ We use Principal Component Analysis, Jensen-Shannon distance, and Spearman's ran
 
 1. Extract relevant features sets (`BouroujeniEtAl`, `MarrasEtAl`, `LalleConati`, and `ChenCui`) through the ML4ED lab's EDM 2021 contribution on [benchmarks for feature predictive power](https://github.com/epfl-ml4ed/flipped-classroom). Place the results of these feature extraction scripts in `data/`. A toy course example of extracted features is included in the `data/` folder.
 
-2. Fill out the `data/metadata.csv` file with relevant meta information about your course(s). One example of course metadata is currently showcased in the file. This information is necessary for extracting the meta features in the BTM and BSM models.
+2. Use the trained BiLSTM model for each course in the `models/` folder. Alternatively, train the model yourself with code from the ML4ED lab's L@S 2022 contribution on [meta transfer learning](https://github.com/epfl-ml4ed/meta-transfer-learning) using the BO (Behavior-Only) baseline model scripts.
 
-3. Use the trained BiLSTM model for each course in the `models/` folder. Alternatively, train the model yourself with code from the ML4ED lab's L@S 2022 contribution on [meta transfer learning](https://github.com/epfl-ml4ed/meta-transfer-learning) using the BO (Behavior-Only) baseline model scripts.
+3. Select your uniformly sampled subset of points (for time-efficiency, reducing the experiments to hours instead of weeks) by running `python scripts/uniform.py`.
 
-4. Select your uniformly sampled subset of points (for time-efficiency, reducing the experiments to hours instead of weeks) by running `python scripts/uniform.py`.
-
-5. Run your desired experiment from `scripts/` by executing the explainability script with Python 3.7 or higher (i.e. `python scripts/LIME.py`).
+4. Run your desired experiment from `scripts/` by executing the explainability script with Python 3.7 or higher (i.e. `python scripts/LIME.py`).
 
 ## Contributing 
 
