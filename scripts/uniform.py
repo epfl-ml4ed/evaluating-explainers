@@ -21,16 +21,14 @@ def fillNaN(feature):
     feature = feature.reshape(shape)
     return feature
 
-
-#
 # Loading the features used in training in the biLSTM with loading the json file made in the biLSTM training notebook.
 file = './selected_features/' + course + '.json'
 with open(file, 'r') as f:
     selected_features = json.load(f)
-#
+
 # Loading the labels
 feature_type = "boroujeni_et_al"
-filepath = './data/all/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
+filepath = './data/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
 labels = pd.read_csv(filepath)["label-pass-fail"]
 labels[labels.shape[0]] = 1
 y = labels.values
@@ -55,7 +53,7 @@ selected_features = []
 n_weeks=0
 n_features=0
 for i,feature_type in enumerate(feature_types):
-    filepath = './data/all/' + week_type + '-' + feature_type + '-' + course
+    filepath = './data/' + week_type + '-' + feature_type + '-' + course
     feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
 
     if remove_obvious and feature_type=='marras_et_al':
@@ -74,8 +72,7 @@ for i,feature_type in enumerate(feature_types):
     feature_current = feature_current[:,:,nonZero]
     selected_features.append(feature_names[i][selected])
     n_features += len(feature_names[i][selected])
-    ##### Normalization with min-max. I added the artifical 1.001 max row for solving the same min max problem
-    ##### for features with max=0 I added 1 instead of 1.001 of maximum
+    ##### Normalization with min-max. Added the artifical max (1.001 or max) for solving the min max problem
     features_min = feature_current.min(axis=0).reshape(-1)
     features_max = feature_current.max(axis=0)
     features_max = np.where(features_max==0,np.ones(features_max.shape),features_max)
@@ -89,22 +86,14 @@ features = np.concatenate(feature_list, axis=2)
 features = features.reshape(features.shape[0],-1)
 features = pd.DataFrame(features)
 SHAPE = features.shape
-# print(np.isnan(features[0,0,-1]))
+
 print(features.shape)
 print('course: ', course)
 print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 print(selected_features)
-
-# In[ ]:
-
-
 # calculate the number of features
 n_features = sum([len(x) for x in selected_features])
-
-
-# In[ ]:
-
 
 # make feature names more readable
 # ex: time_in__problem_<function sum at 0x7f3bd02cc9d0> -> time_in_problem_sum
@@ -115,18 +104,10 @@ def clean_name(feature):
   fct = feature[id+9:id+14].strip()
   return feature[0:id]+fct
 
-
-# In[ ]:
-
-
 selected_features = [np.array([clean_name(x) for x in selected_features[0]]),
  np.array([clean_name(x) for x in selected_features[1]]),
  np.array([clean_name(x) for x in selected_features[2]]),
  np.array([clean_name(x) for x in selected_features[3]])]
-
-
-# In[ ]:
-
 
 selected_features={
     "boroujeni_et_al":list(selected_features[0]),
@@ -139,18 +120,10 @@ file = 'selected_features/' + course + '_after.json'
 with open(file, 'w') as f: 
     json.dump(selected_features, f)
 
-
-# In[ ]:
-
-
 num_feature_type = []
 for feature_type in feature_types:
     num_feature_type.append(len(selected_features[feature_type]))
 print(num_feature_type)
-
-
-# In[ ]:
-
 
 # Loading feature names and transforming them to 2D format.
 feature_names= []
@@ -167,35 +140,19 @@ features.columns = feature_names
 
 
 # ## Making a predict_proba
-
-# In[ ]:
-
-
 features_min = features.min(axis=0)
 features_max = features.max(axis=0)
 features_max = np.where(features_max==0, np.ones(features_max.shape),features_max)
-
-
-# In[ ]:
-
 
 # This module transforms our data to the 2D format biLSTM was trained with.
 def transform_x(x, num_feature_type, num_weeks, features_min, features_max, normal=True):
     return np.array(x).reshape((x.shape[0],x.shape[1]))
 
-
-# In[ ]:
-
-
 features_min = features.min(axis=0)
 features_max = features.max(axis=0)
 
-
-# In[ ]:
-
-
 # EDIT HERE FOR OTHER MODELS
-model_name = "lstm_bi_"+course+"_new"
+model_name = "models/lstm_bi_"+course+"_new"
 loaded_model = keras.models.load_model(model_name)
 
 

@@ -73,7 +73,7 @@ feature_list = {}
 for course in courses:
     feature_type_list = []
     for feature_type in feature_types:
-        filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course
+        filepath = 'data/' + week_type + '-' + feature_type + '-' + course
         feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
         print(feature_current.shape)
         feature_norm = feature_current.reshape(-1,feature_current.shape[2] )
@@ -259,7 +259,7 @@ def fillNaN(feature):
 
 def load_labels(course):
   feature_type = "boroujeni_et_al"
-  filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
+  filepath = 'data/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
   labels = pd.read_csv(filepath)['label-pass-fail']
   labels[labels.shape[0]] = 1
   return labels.values
@@ -270,7 +270,7 @@ def load_features(course):
   num_weeks = 0
   num_features = 0
   for i,feature_type in enumerate(feature_types):
-    filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course
+    filepath = 'data/' + week_type + '-' + feature_type + '-' + course
     feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
 
     if remove_obvious and feature_type=='marras_et_al':

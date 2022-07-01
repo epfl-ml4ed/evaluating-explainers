@@ -1,0 +1,1 @@
+{"model": "extractor.set.akpinar_et_al.AkpinarEtAl", "courses": "data/test/course", "timeframe": "eq_week", "workdir": "../../epfl-mooc/featurized/", "course_id": "toy_course-20210202_000840", "type": "toy-course", "platform": "toy-platform"}

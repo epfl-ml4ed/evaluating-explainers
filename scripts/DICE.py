@@ -23,32 +23,20 @@ import json
 
 
 # ## Preliminaries: Loading the data and ML model
-
-# In[ ]:
-
-
 # edit here for other courses and params
 week_type = 'eq_week'
 feature_types = [ "boroujeni_et_al", "chen_cui", "marras_et_al", "lalle_conati"]
 course = 'microcontroleurs_003'
 remove_obvious = True
 
-
-# In[ ]:
-
-
 # edit directory name for other courses !
 # get_ipython().system('mkdir -p uniform_eq_results/Counterfactuals/' + course)
-
-
-# In[ ]:
-
 
 # Loading the features
 feature_list = []
 feature_type_list = []
 for feature_type in feature_types:
-  filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course
+  filepath = 'data/' + week_type + '-' + feature_type + '-' + course
   feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
   if feature_type=='marras_et_al' and remove_obvious:
     feature_current = np.delete(feature_current, [0,1,6], axis=2)
@@ -63,10 +51,6 @@ print('course: ', course)
 print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 
-
-# In[ ]:
-
-
 # Loading feature names
 feature_names= []
 for feature_type in feature_types:
@@ -75,17 +59,9 @@ for feature_type in feature_types:
     feature_type_name = feature_type_name.values.reshape(-1)
     feature_names.append(feature_type_name)
 
-
-# In[ ]:
-
-
 if remove_obvious:
   new_marras = feature_names[2][[2,3,4,5]]
   feature_names[2] = new_marras
-
-
-# In[ ]:
-
 
 def clean_name(feature):
   id = feature.find('<')
@@ -94,18 +70,10 @@ def clean_name(feature):
   fct = feature[id+9:id+14].strip()
   return feature[0:id]+fct
 
-
-# In[ ]:
-
-
 feature_names = [np.array([clean_name(x) for x in feature_names[0]]),
  np.array([clean_name(x) for x in feature_names[1]]),
  np.array([clean_name(x) for x in feature_names[2]]),
  np.array([clean_name(x) for x in feature_names[3]])]
-
-
-# In[ ]:
-
 
 def fillNaN(feature):
     shape = feature.shape
@@ -116,13 +84,9 @@ def fillNaN(feature):
     feature = feature.reshape(shape)
     return feature
 
-
-# In[ ]:
-
-
 # loading the labels
 feature_type = "boroujeni_et_al"
-filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
+filepath = 'data/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
 labels = pd.read_csv(filepath)['label-pass-fail']
 labels[labels.shape[0]] = 1
 y = labels.values
@@ -132,7 +96,7 @@ selected_features = []
 num_weeks=0
 n_features=0
 for i,feature_type in enumerate(feature_types):
-    filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course
+    filepath = 'data/' + week_type + '-' + feature_type + '-' + course
     feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
 
     if remove_obvious and feature_type=='marras_et_al':
@@ -174,10 +138,6 @@ print('course: ', course)
 print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 print(selected_features)
-
-
-# In[ ]:
-
 
 selected_features={
     "boroujeni_et_al":list(selected_features[0]),
@@ -224,14 +184,7 @@ print('dice model')
 # 
 # We first generate counterfactuals for a given input point. 
 
-# In[ ]:
-
-
 num_instances = np.load('uniform_'+course+'.npy')
-
-
-# In[ ]:
-
 
 import time
 t1 = time.time()

@@ -11,24 +11,16 @@ tf.compat.v1.disable_v2_behavior() # disable TF2 behaviour as alibi code still r
 from math import floor, ceil
 import sklearn as sk
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Activation, Dense, Bidirectional, LSTM,Masking,Embedding
-from tensorflow.keras.models import Model, load_model
-from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score, roc_auc_score, f1_score, accuracy_score, make_scorer
-from sklearn.model_selection import cross_validate,train_test_split,GridSearchCV
-from sklearn.preprocessing import normalize
+from tensorflow.keras.layers import Dense, Bidirectional, LSTM,Masking
+from tensorflow.keras.models import load_model
+from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score, roc_auc_score, f1_score, accuracy_score
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import load_model 
-from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 import matplotlib.pyplot as pyplot
-import seaborn as sns
 import time
-import json
-import alibi
 
 
-# # Loading data
-
-# In[ ]:
-
+# Loading data
 
 # Edit here for other courses, parameters
 week_type = 'eq_week'
@@ -36,10 +28,6 @@ feature_types = [ "boroujeni_et_al", "chen_cui", "marras_et_al", "lalle_conati"]
 course = 'microcontroleurs_003'
 # remove features directly related to student success
 remove_obvious = True
-
-
-# In[ ]:
-
 
 def fillNaN(feature):
     shape = feature.shape
@@ -50,15 +38,11 @@ def fillNaN(feature):
     feature = feature.reshape(shape)
     return feature
 
-
-# In[ ]:
-
-
 # Loading the features
 feature_list = []
 feature_type_list = []
 for feature_type in feature_types:
-  filepath = './data/all/' + week_type + '-' + feature_type + '-' + course
+  filepath = './data/' + week_type + '-' + feature_type + '-' + course
   feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
   print(feature_current.shape)
   feature_norm = feature_current.reshape(-1,feature_current.shape[2] )
@@ -69,10 +53,6 @@ print('course: ', course)
 print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 
-
-# In[ ]:
-
-
 # Loading feature names
 feature_names= []
 for feature_type in feature_types:
@@ -81,18 +61,10 @@ for feature_type in feature_types:
     feature_type_name = feature_type_name.values.reshape(-1)
     feature_names.append(feature_type_name)
 
-
-# In[ ]:
-
-
 # dropping student_shape, competency strength, competency alignment
 if remove_obvious:
   new_marras = feature_names[2][[2,3,4,5]]
   feature_names[2] = new_marras
-
-
-# In[ ]:
-
 
 # cleaning feature names
 def clean_name(feature):
@@ -107,13 +79,9 @@ feature_names = [np.array([clean_name(x) for x in feature_names[0]]),
  np.array([clean_name(x) for x in feature_names[2]]),
  np.array([clean_name(x) for x in feature_names[3]])]
 
-
-# In[ ]:
-
-
 # loading the labels
 feature_type = "boroujeni_et_al"
-filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
+filepath = './data/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
 labels = pd.read_csv(filepath)['label-pass-fail']
 labels[labels.shape[0]] = 1
 y = labels.values
@@ -123,7 +91,7 @@ selected_features = []
 num_weeks=0
 n_features=0
 for i,feature_type in enumerate(feature_types):
-    filepath = 'data/all/' + week_type + '-' + feature_type + '-' + course
+    filepath = './data/' + week_type + '-' + feature_type + '-' + course
     feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
     shape = feature_current.shape
 
@@ -163,20 +131,12 @@ print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 print(selected_features)
 
-
-# In[ ]:
-
-
 selected_features={
     "boroujeni_et_al":list(selected_features[0]),
      "chen_cui":list(selected_features[1]),
     "marras_et_al":list(selected_features[2]),
     "lalle_conati":list(selected_features[3])
 }
-
-
-# In[ ]:
-
 
 feature_names= []
 final_features = []
@@ -188,22 +148,10 @@ for i in np.arange(num_weeks):
 feature_names = np.concatenate(feature_names, axis=0)
 feature_names = feature_names.reshape(-1)
 
-
-# In[ ]:
-
-
 labels=np.concatenate(((1-y).reshape(-1,1),y.reshape(-1,1)),axis=1)
 labels.shape
 
-
-# In[ ]:
-
-
 f = pd.DataFrame(features, columns=feature_names)
-
-
-# In[ ]:
-
 
 #num_features = len([selected_features])
 s_f = list(selected_features.values())
@@ -213,10 +161,6 @@ num_features = len([feature for feature_group in s_f for feature in feature_grou
 # # Model
 
 # A new model has to be trained for CEM, since it needs a target variable of a different shape (n_instances, 2)
-
-# In[ ]:
-
-
 def bidirectional_lstm(x_train, y_train, x_test, y_test, x_val, y_val, week_type, feature_types, course,n_weeks,n_features, num_epochs=100):
     n_dims = x_train.shape[0]
     look_back = 3
@@ -248,10 +192,6 @@ def bidirectional_lstm(x_train, y_train, x_test, y_test, x_val, y_val, week_type
     lstm.save('lstm_bi_'+course+'_cem')
     return history, scores
 
-
-# In[ ]:
-
-
 def plot_history(history, file_name):
     # plot loss during training
     pyplot.figure(0)
@@ -272,10 +212,6 @@ def plot_history(history, file_name):
     pyplot.ylabel("accuracy")
     pyplot.savefig(file_name + "_acc.png")
 
-
-# In[ ]:
-
-
 def evaluate(model, x_test, y_test, week_type, feature_type, course, model_name=None, model_params=None, y_pred=None):
     scores={}
     y_test=y_test[:,1]
@@ -292,16 +228,8 @@ def evaluate(model, x_test, y_test, week_type, feature_type, course, model_name=
     scores['data_balance'] = sum(y)/len(y)
     return scores
 
-
-# In[ ]:
-
-
 features.shape
 labels.shape
-
-
-# In[ ]:
-
 
 train_size=0.8
 x_train, x_rem, y_train, y_rem = train_test_split(features, labels, train_size=train_size, random_state=25)
@@ -309,14 +237,6 @@ x_test, x_val, y_test, y_val = train_test_split(x_rem, y_rem, train_size=0.5, ra
 print(x_train.shape,x_test.shape,x_val.shape)
 print(y_train.shape,y_test.shape,y_val.shape)
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 current_timestamp = str(time.time())[:-2]
@@ -335,21 +255,9 @@ print(run_name)
 
 
 # # Explainers
-
-# In[ ]:
-
-
 from alibi.explainers import CEM
 
-
-# In[ ]:
-
-
 bilstm = load_model('./lstm_bi_'+course+'_cem')
-
-
-# In[ ]:
-
 
 def pn_all(num_instances,features,feature_names):
   mode = 'PN'  # 'PN' (pertinent negative) or 'PP' (pertinent positive)
@@ -387,10 +295,6 @@ def pn_all(num_instances,features,feature_names):
       print(f'Error occured for instance {i}')
       print(change)
   return explanations, changes
-
-
-# In[ ]:
-
 
 def pp_all(num_instances,features,feature_names):
   mode = 'PP'  # 'PN' (pertinent negative) or 'PP' (pertinent positive)
@@ -496,10 +400,6 @@ diffs.to_csv('uniform_eq_results/CEM/'+course+'/importances.csv')
 
 
 diffs
-
-
-# In[ ]:
-
 
 
 

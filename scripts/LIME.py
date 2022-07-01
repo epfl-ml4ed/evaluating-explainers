@@ -3,27 +3,17 @@
 
 # # Notebook for explaing biLSTM trained on DSP001 using tabular LIME
 
-# Side note: This notebook takes 1 hour and half on google colab. Running it locally took near 7 hours. So, I suggest running it on colab.
-# 
-
-import lime
 from lime import lime_tabular
 import numpy as np
 import pandas as pd
 import tensorflow.keras as keras
 import matplotlib.pyplot as pyplot
-from sklearn.preprocessing import normalize
 import seaborn as sns
-import json
-import math
 import time
 from IPython.display import clear_output
 
 
 # ## Loading the features and their names
-
-# In[ ]:
-
 
 # This module fills the NaNs in our data as LIME library can't handle data with NaNs in it.
 def fillNaN(feature):
@@ -37,21 +27,10 @@ def fillNaN(feature):
     feature = feature.reshape(shape)
     return feature
 
-
-# # In[ ]:
-# file = './selected_features.json'
-# with open(file, 'r') as f:
-#     selected_features = json.load(f)
-    
 week_type = 'eq_week'
 feature_types = ["boroujeni_et_al", "chen_cui", "marras_et_al", "lalle_conati"]
-course = 'microcontroleurs_003'
+course = 'dsp_001'
 remove_obvious=True
-
-
-
-# In[ ]:
-
 
 # Loading feature names
 feature_names= []
@@ -66,11 +45,10 @@ for feature_type in feature_types:
 if remove_obvious:
   new_marras = feature_names[2][[2,3,4,5]]
   feature_names[2] = new_marras
-# In[ ]:
 
 # loading the labels
 feature_type = "boroujeni_et_al"
-filepath = './data/all/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
+filepath = './data/' + week_type + '-' + feature_type + '-' + course + '/feature_labels.csv'
 labels = pd.read_csv(filepath)['label-pass-fail']
 labels[labels.shape[0]] = 1
 y = labels.values
@@ -80,9 +58,7 @@ feature_list = []
 num_weeks =0
 n_features=0
 for i,feature_type in enumerate(feature_types):
-    filepath = './data/all/' + week_type + '-' + feature_type + '-' + course
-    if feature_type == "lalle_connati":
-        filepath = './feature/eq_week-lalle_conati-' + course
+    filepath = './data/' + week_type + '-' + feature_type + '-' + course
     feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
     if remove_obvious and feature_type=='marras_et_al':
       feature_current = np.delete(feature_current, [0,1,6], axis=2)
@@ -112,60 +88,9 @@ print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 
 print(num_weeks)
-# for i,feature_type in enumerate(feature_types):
-#     filepath = './data/' + week_type + '-' + feature_type + '-' + course
-#     feature_current = np.load(filepath+'/feature_values.npz')['feature_values']
-
-#     if remove_obvious and feature_type=='marras_et_al':
-#       feature_current = np.delete(feature_current, [0,1,6], axis=2)
-
-#     shape = feature_current.shape
-#     if i==0:
-#       n_weeks = shape[1]
-#     nonNaN = (shape[0]*shape[1] - np.isnan(feature_current.reshape(-1,feature_current.shape[2])).sum(axis=0) > 0)
-#     feature_current = feature_current[:,:,nonNaN]
-#     selected = np.arange(shape[2])
-#     selected = selected[nonNaN]
-#     feature_current = fillNaN(feature_current)
-#     nonZero = (abs(feature_current.reshape(-1,feature_current.shape[2])).sum(axis=0)>0)
-#     selected = selected[nonZero]
-#     feature_current = feature_current[:,:,nonZero]
-#     selected_features.append(feature_names[i][selected])
-#     n_features += len(feature_names[i][selected])
-#     ##### Normalization with min-max. I added the artifical 1.001 max row for solving the same min max problem
-#     ##### for features with max=0 I added 1 instead of 1.001 of maximum
-# #     features_min = feature_current.min(axis=0).reshape(-1)
-# #     features_max = feature_current.max(axis=0)
-# #     features_max = np.where(features_max==0,np.ones(features_max.shape),features_max)
-# #     max_instance = 1.001*features_max
-# #     feature_current = np.vstack([feature_current,max_instance.reshape((1,)+max_instance.shape)])
-# #     features_max = features_max.reshape(-1)
-# #     feature_norm = (feature_current.reshape(shape[0]+1,-1)-features_min)/(1.001*features_max-features_min)
-# #     feature_current = feature_norm.reshape(-1,feature_current.shape[1],feature_current.shape[2] )
-#     feature_list.append(feature_current)
-# features = np.concatenate(feature_list, axis=2)
-# features = features.reshape(features.shape[0],-1)
-# features = pd.DataFrame(features)
-# SHAPE = features.shape
-# # print(np.isnan(features[0,0,-1]))
-# print(features.shape)
-# print('course: ', course)
-# print('week_type: ', week_type)
-# print('feature_type: ', feature_types)
-# print(selected_features)
-
-
-# In[ ]:
-
-# In[ ]:
-
 
 # calculate the number of features
 n_features = sum([len(x) for x in selected_features])
-
-
-# In[ ]:
-
 
 # Loading feature names and transforming them to 2D format.
 feature_names = []
@@ -180,10 +105,6 @@ feature_names = feature_names.reshape(-1)
 # print(feature_names)
 features.columns = feature_names
 
-
-# In[ ]:
-
-
 # This block loads number of features in each feature set.
 num_feature_type = []
 for i,feature_type in enumerate(feature_types):
@@ -191,10 +112,6 @@ for i,feature_type in enumerate(feature_types):
 print(num_feature_type)
 
 # ## Making a predict_proba
-
-# In[ ]:
-
-
 
 # This module transforms our data to the 2D format biLSTM was trained with.
 def transform_x(x, num_feature_type, num_weeks, features_min, features_max):
@@ -214,26 +131,13 @@ def transform_x(x, num_feature_type, num_weeks, features_min, features_max):
     )
     x = feature_norm[: feature_norm.shape[0] - 1, :]
     return x
-# In[ ]:
 
 print(features.shape)
 # EDIT HERE FOR OTHER MODELS
-model_name = "lstm_bi_"+course+"_new"
+model_name = "models/lstm_bi_"+course+"_new"
 loaded_model = keras.models.load_model(model_name)
-
-# In[ ]:
-
-
 # This lambda returns a (NUM OF INSTANCES,2) array of prob of pass in first column and prob of fail in another column
-predict_fn = lambda x: np.array([[1-loaded_model.predict(transform_x(x,num_feature_type,num_weeks,features_min,features_max))],[loaded_model.predict(transform_x(x,num_feature_type,num_weeks,features_min,features_max))]]).reshape(2,-1).T
-
-# In[ ]:
-
-# ## Creating a LIME tabular explainer for the Loaded features 
-
-# In[ ]:
-
-
+predict_fn = lambda x: np.array([[1-loaded_model.predict(transform_x(x,num_feature_type,num_weeks,features_min,features_max))],[loaded_model.predict(transform_x(x,num_feature_type,num_weeks,features_min,features_max))]]).reshape(2,-1).T# ## Creating a LIME tabular explainer for the Loaded features 
 # This module makes tabular lime explainer with instance numbers given to it.
 def instance_explainer(instance_numbers,features,feature_names,class_names,predict_fn, num_features=10,mode='classification',discretize_continuous=True, num_samples=5000, distance_metric='euclidean', model_regressor=None, sampling_method='gaussian'):
     explainers=[]
@@ -250,10 +154,6 @@ def instance_explainer(instance_numbers,features,feature_names,class_names,predi
         exp = explainer.explain_instance(features[i], predict_fn, num_features=num_features)
         explainers.append(exp)
     return explainers
-
-
-# In[ ]:
-
 
 def show_all_in_notebook(explainers,instances,real_labels,features,num_weeks,num_feature_type,group):
     for i,exp in enumerate(explainers):
@@ -278,10 +178,6 @@ def show_all_in_notebook(explainers,instances,real_labels,features,num_weeks,num
           Html_file.write(h)
           Html_file.close()
     return
-
-
-# In[ ]:
-
 
 def pyplot_all(explainers,instances,real_labels,group):
     import matplotlib.pyplot as plt
@@ -311,10 +207,6 @@ def pyplot_all(explainers,instances,real_labels,group):
           plt.savefig("./uniform_eq_results/LIME/" +course + "/pyplots/"+str(instances[i])+".png", bbox_inches = 'tight', facecolor=fig.get_facecolor())
     return
 
-
-# In[ ]:
-
-
 def DataFrame_all(explainers,instances,real_labels,group):
     df=pd.DataFrame({})
     class_names=['pass', 'fail']
@@ -342,14 +234,7 @@ def DataFrame_all(explainers,instances,real_labels,group):
 
 group = 'UniformPick'
 
-
-# In[ ]:
-
-
 prediction = loaded_model.predict(features)
-
-# In[ ]:
-
 instances = np.load('uniform_'+course+'.npy')
 
 # In[ ]:
@@ -363,23 +248,10 @@ explainers=instance_explainer(instances,features,feature_names,class_names,predi
 end = time.time()
 print(end - start)
 
-
-# In[ ]:
-
-
-# show_all_in_notebook(explainers,instances,y,np.array(features),num_weeks,num_feature_type,group)
 # clear_output()
-
-
-# In[ ]:
-
 print('pyplot')
 pyplot_all(explainers,instances,y,group)
 # pyplot.close('all') #comment this to see results
-
-
-# In[ ]:
-
 print('df saving')
 df,dfl=DataFrame_all(explainers,instances,y,group)
 # clear_output() #comment this to see results
@@ -388,10 +260,6 @@ df.iloc[:,2::] = abs(df.iloc[:,2::])
 ai = np.argsort(df.iloc[:,2::].values)
 for j,c in enumerate(list(ai[:,:10])):
     df.iloc[j,c+2] = np.arange(1,11)
-
-# In[ ]:
-
-
 top_features = df.columns
 top_features = top_features[2::]
 top_features_type = np.array([s[0:s.find('InWeek')].split(' ')[-1] for s in top_features])
@@ -403,10 +271,6 @@ top_features_week_unique = list({ k for k in top_features_week })
 count_feature_week = [count[top_features_week==x].sum()/500 for x in top_features_week_unique]
 # clear_output()
 
-
-# In[ ]:
-
-
 ind = np.argsort(count_feature_type)[::-1]
 fig, ax = pyplot.subplots(figsize=(10, 5),facecolor='white')
 g = sns.barplot(x=top_features_type_unique, y=count_feature_type, palette="rocket",ax =ax,order=np.take_along_axis(np.array(top_features_type_unique), ind, axis=0))
@@ -417,10 +281,6 @@ g.set_ylabel("percent of features", fontsize=12)
 pyplot.savefig("./uniform_eq_results/LIME/" + course + "/pyplots/impFeaturesType.png", bbox_inches = 'tight', facecolor=fig.get_facecolor())
 
 
-# In[ ]:
-
-
-
 ind = np.argsort(count_feature_week)[::-1]
 fig, ax = pyplot.subplots(figsize=(10, 5),facecolor='white')
 g = sns.barplot(x=top_features_week_unique, y=count_feature_week, palette="rocket",ax =ax,order=np.take_along_axis(np.array(top_features_week_unique), ind, axis=0))
@@ -429,28 +289,16 @@ g.set_title( 'important features with respect to their week', fontsize=15)
 g.set_xlabel("", fontsize=15)
 g.set_ylabel("percent of features", fontsize=12)
 pyplot.savefig("./uniform_eq_results/LIME/" + course + "/pyplots/impFeaturesWeek.png", bbox_inches = 'tight', facecolor=fig.get_facecolor())
-
-
-# In[ ]:
-
 zero_data = np.zeros(shape=(num_weeks,len(top_features_type_unique)))
 d = pd.DataFrame(zero_data, columns=top_features_type_unique)
 for i,f in enumerate(top_features_type):
     d[f][int(top_features_week[i])-1]+=count[i]
-
-
-# In[ ]:
-
 fig, ax = pyplot.subplots(figsize=(10, 10),facecolor='white')
 g = sns.heatmap(d.values.T / instances.shape[0], annot=True, fmt=".2f",ax=ax)
 l=list(np.arange(1,num_weeks+1))
 g.set_xticklabels(['week'+str(i) for i in l],rotation=0)
 g.set_yticklabels(top_features_type_unique,rotation=0)
 pyplot.savefig("./uniform_eq_results/LIME/" + course + "/pyplots/heatmap.png", bbox_inches = 'tight', facecolor=fig.get_facecolor())
-
-
-# In[ ]:
-
 
 df.to_csv(r'./uniform_eq_results/LIME/'+course+'/dataframes/all_important_features.csv', index = False, header = True)
 d.to_csv(r'./uniform_eq_results/LIME/'+course+'/dataframes/df_for_heatmap.csv', index = False, header = True)

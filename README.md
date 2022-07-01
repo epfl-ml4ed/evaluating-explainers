@@ -2,9 +2,22 @@
 
 This repository is the official implementation of the EDM 2022 Paper entitled "Evaluating the Explainers: A Comparison of Explainability Techniques for Black-Box Success Prediction in MOOCs" written by [Vinitra Swamy](http://github.com/vinitra), Bahar Radmehr, Natasa Krco, [Mirko Marras](https://www.mirkomarras.com/), and [Tanja Käser](https://people.epfl.ch/tanja.kaeser/?lang=en).
 
-Experiments are located in `scripts/`, corresponding directly to the experimental methodology mentioned in the paper.
+Experiments are located in `scripts/`, corresponding directly to the experimental methodology mentioned in the paper. **Note (1 Jul 2022): This version of the evaluating-explainers code is not fully cleaned and is subject to change and refactoring in the next months.**
 
 ## Usage guide
+
+0. Install relevant dependencies with `pip install -r requirements.txt`.
+
+To extract features of your own course from scratch: 
+1. Extract relevant features sets (`BouroujeniEtAl`, `MarrasEtAl`, `LalleConati`, and `ChenCui`) through the ML4ED lab's EDM 2021 contribution on [benchmarks for feature predictive power](https://github.com/epfl-ml4ed/flipped-classroom). Place the results of these feature extraction scripts in `data/`. A toy course example of extracted features is included in the `data/` folder.
+
+2. Fill out the `data/metadata.csv` file with relevant meta information about your course(s). One example of course metadata is currently showcased in the file. This information is necessary for extracting the meta features in the BTM and BSM models.
+
+3. Use the trained BiLSTM model for each course in the `models/` folder. Alternatively, train the model yourself with code from the ML4ED lab's L@S 2022 contribution on [meta transfer learning](https://github.com/epfl-ml4ed/meta-transfer-learning) using the BO (Behavior-Only) baseline model scripts.
+
+4. Select your uniformly sampled subset of points (for time-efficiency, reducing the experiments to hours instead of weeks) by running `python scripts/uniform.py`.
+
+5. Run your desired experiment from `scripts/` by executing the explainability script with Python 3.7 or higher (i.e. `python scripts/LIME.py`).
 
 ## Contributing 
 
