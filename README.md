@@ -4,7 +4,7 @@ This repository is the official implementation of the EDM 2022 Paper entitled "E
 
 Experiments are located in `scripts/`, corresponding directly to the experimental methodology mentioned in the paper.  
 
-**July 1, 2022: This version of the evaluating-explainers code is not fully cleaned and is subject to change and refactoring in the next months.**
+> **July 1, 2022: This version of the evaluating-explainers code is not fully cleaned and is subject to refactoring in the next months.**
 
 ## Usage guide
 
