@@ -4,26 +4,8 @@
 # # Training biLSTM on ALL features for DSP001
 # 
 
-# In[18]:
-
-
-from google.colab import drive
-drive.mount('/content/drive')
-
-
-# In[19]:
-
-
-# modify filepath here
-get_ipython().run_line_magic('cd', '/content/drive/MyDrive/semproj/epfl/ex-epfl-mooc/ex-epfl-mooc/')
-
-
 # ## Importing the needed libraries:
 
-# In[20]:
-
-
-#importing the libraries needed
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -51,8 +33,6 @@ import json
 # set week type, feature types, and courses here
 week_type = 'eq_week'
 feature_types = [ "boroujeni_et_al", "chen_cui", "marras_et_al", "lalle_conati"]
-#courses = ['dsp_001', 'dsp_002', 'villesafricaines_001',
-#           'progfun_002', 'geomatique_003']
 courses = ['progfun_002', 'geomatique_003']
 
 # boolean: if True, remove features directly related to student success in weekly quizzes:
@@ -63,10 +43,6 @@ remove_obvious = True
 params = {}
 for course in courses:
   params[course] = {'num_epochs':15}
-
-
-# In[22]:
-
 
 # Loading the features
 feature_list = {}
@@ -85,10 +61,6 @@ print('course: ', courses)
 print('week_type: ', week_type)
 print('feature_type: ', feature_types)
 
-
-# In[23]:
-
-
 # Loading feature names
 feature_names= []
 for feature_type in feature_types:
@@ -106,10 +78,6 @@ if remove_obvious:
     new_features = feature_list[course][2].drop([0,1,6], axis=1)
     feature_list[course][2] = new_features
 
-
-# In[24]:
-
-
 # reformat feature names
 # ex: time_sessions_<function sum at 0x7f3bd02cc9d0> -> time_sessions_sum
 def clean_name(feature):
@@ -119,18 +87,10 @@ def clean_name(feature):
   fct = feature[id+9:id+14].strip()
   return feature[0:id]+fct
 
-
-# In[25]:
-
-
 feature_names = [np.array([clean_name(x) for x in feature_names[0]]),
  np.array([clean_name(x) for x in feature_names[1]]),
  np.array([clean_name(x) for x in feature_names[2]]),
  np.array([clean_name(x) for x in feature_names[3]])]
-
-
-# In[26]:
-
 
 for i,feature_type in enumerate(feature_types):
     for course in courses:
@@ -144,11 +104,7 @@ for i,feature_type in enumerate(feature_types):
         for index,data in enumerate(round(y,2)):
             pyplot.text(x=index-.2 , y =data , s=f"{data}" , fontdict=dict(fontsize=10))
         fig.savefig("NaNs_"+feature_type+"_for_"+course+".png", bbox_inches = 'tight', facecolor=fig.get_facecolor())
-
-
-# In[27]:
-
-
+        
 for i,feature_type in enumerate(feature_types):
     for course in courses:
         y=(feature_list[course][i]==0).sum(axis=0)/(feature_list[course][i].shape[0])
@@ -164,9 +120,6 @@ for i,feature_type in enumerate(feature_types):
 
 
 # ## Training on the dataset DSP001 with replacing NaNs:
-
-# In[28]:
-
 
 # Bidirection LSTM definition
 
@@ -196,11 +149,7 @@ def bidirectional_lstm(x_train, y_train, x_test, y_test, x_val, y_val, week_type
     scores = evaluate(None, x_test, y_test, week_type, feature_types, course, y_pred=y_pred, model_name="TF-LSTM-bi", model_params=model_params)
     #lstm.save('lstm_bi_'+current_timestamp)
     return history, scores
-
-
-# In[29]:
-
-
+  
 def plot_history(history, filename):
   fig, axs = pyplot.subplots(1,1, figsize=(6,3))
   sns.lineplot(x=range(len(history.history['loss'])), y=history.history['loss'], label='train', ax=axs)
@@ -219,9 +168,6 @@ def plot_history(history, filename):
   #pyplot.savefig(filename+'_acc.png')
 
 
-# In[30]:
-
-
 def evaluate(model, x_test, y_test, week_type, feature_type, course, model_name=None, model_params=None, y_pred=None):
     scores={}
     scores['test_acc'] = accuracy_score(y_test, y_pred)
@@ -235,11 +181,7 @@ def evaluate(model, x_test, y_test, week_type, feature_type, course, model_name=
     scores['course'] = course
     scores['data_balance'] = sum(y)/len(y)
     return scores
-
-
-# In[31]:
-
-
+  
 # fillNaN function replaces NaNs in each week with the minimum of the feature over all weeks
 
 def fillNaN(feature):
@@ -253,9 +195,6 @@ def fillNaN(feature):
 
 
 # loading the data and normalizing it:
-
-# In[32]:
-
 
 def load_labels(course):
   feature_type = "boroujeni_et_al"
@@ -306,19 +245,13 @@ def load_features(course):
 
   features = np.concatenate(feature_list, axis=2)
   features = features.reshape(features.shape[0],-1)
-  #features = pd.DataFrame(features)
   SHAPE = features.shape
-  # print(np.isnan(features[0,0,-1]))
   print(features.shape)
   print('course: ', course)
   print('week_type: ', week_type)
   print('feature_type: ', feature_types)
   print(selected_features)
   return features, selected_features, num_weeks, num_features
-
-
-# In[33]:
-
 
 labels = {}
 features = {}
@@ -333,9 +266,6 @@ for course in courses:
   params[course]['num_features'] = num_features
 
 
-# In[34]:
-
-
 for course in courses:
   sel_feats = {
       "boroujeni_et_al":list(selected_features[course][0]),
@@ -348,9 +278,6 @@ for course in courses:
 
   with open(file, 'w') as f: 
     json.dump(selected_features[course],f)
-
-
-# In[35]:
 
 
 # training models
@@ -386,10 +313,3 @@ for course in courses:
         print("{:<15} {:<8} ".format(ke, v))
   run_name = model.__name__ + "_" + course + "_" + current_timestamp
   fig = plot_history(history=history, filename=run_name)
-
-
-# In[35]:
-
-
-
-
