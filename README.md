@@ -18,7 +18,7 @@ We use Principal Component Analysis, Jensen-Shannon distance, and Spearman's ran
 
 1. Extract relevant features sets (`BouroujeniEtAl`, `MarrasEtAl`, `LalleConati`, and `ChenCui`) through the ML4ED lab's EDM 2021 contribution on [benchmarks for feature predictive power](https://github.com/epfl-ml4ed/flipped-classroom). Place the results of these feature extraction scripts in `data/`. A toy course example of extracted features is included in the `data/` folder.
 
-2. Use the trained BiLSTM model for each course in the `models/` folder. Alternatively, train the model yourself with code from the ML4ED lab's L@S 2022 contribution on [meta transfer learning](https://github.com/epfl-ml4ed/meta-transfer-learning) using the BO (Behavior-Only) baseline model scripts.
+2. Use the trained BiLSTM model for each course in the `models/` folder. Alternatively, train the model yourself with `python scripts/LSTM.py`, based on the BO (Behavior-Only) baseline models from the ML4ED lab's L@S 2022 contribution on [meta transfer learning](https://github.com/epfl-ml4ed/meta-transfer-learning).
 
 3. Select your uniformly sampled subset of points (for time-efficiency, reducing the experiments to hours instead of weeks) by running `python scripts/uniform.py`.
 
