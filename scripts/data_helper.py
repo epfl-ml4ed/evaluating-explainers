@@ -86,7 +86,7 @@ def load_features(
             )
             selected = selected[nonZero]
             feature_current = feature_current[:, :, nonZero]
-        selected_features.append(feature_names[i][selected])
+        selected_features.append(list(feature_names[i][selected]))
         n_features += len(feature_names[i][selected])
         if normalize:
             features_min = feature_current.min(axis=0).reshape(-1)
@@ -109,12 +109,9 @@ def load_features(
 
     features = np.concatenate(feature_list, axis=2)
     features = features.reshape(features.shape[0], -1)
-    selected_features = {
-        "boroujeni_et_al": list(selected_features[0]),
-        "chen_cui": list(selected_features[1]),
-        "marras_et_al": list(selected_features[2]),
-        "lalle_conati": list(selected_features[3]),
-    }
+    selected_features = dict(
+        [(feature_types[i], selected_features[i]) for i in len(feature_types)]
+    )
     return features, selected_features, num_weeks, n_features
 
 
