@@ -3,10 +3,12 @@
 
 
 # Importing the libraries needed
+from locale import normalize
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from alibi.explainers import CEM
+from data_helper import add_week, load_features, load_feature_names, load_labels
 
 tf.get_logger().setLevel(40)  # suppress deprecation messages
 tf.compat.v1.disable_v2_behavior()  # disable TF2 behaviour as alibi code still relies on TF1 constructs
@@ -33,137 +35,57 @@ import time
 week_type = "eq_week"
 feature_types = ["feature_set"]
 course = "toy_course"
-# Remove features directly related to student success
-remove_obvious = True
-
-
-def fillNaN(feature):
-    shape = feature.shape
-    feature_min = np.nanmin(feature.reshape(-1, shape[2]), axis=0)
-    feature = feature.reshape(-1, shape[2])
-    inds = np.where(np.isnan(feature))
-    feature[inds] = np.take(feature_min.reshape(-1), inds[1])
-    feature = feature.reshape(shape)
-    return feature
-
+# Remove features directly related to student success from our Marras feature set.
+remove_obvious = False
 
 # Loading feature names
-feature_names = []
-for feature_type in feature_types:
-    filepath = "./scripts/feature_names/" + feature_type + ".csv"
-    feature_type_name = pd.read_csv(filepath, header=None)
-    feature_type_name = feature_type_name.values.reshape(-1)
-    feature_names.append(feature_type_name)
-
-# Dropping student_shape, competency strength, competency alignment from feature names
-if remove_obvious:
-    new_marras = feature_names[2][[2, 3, 4, 5]]
-    feature_names[2] = new_marras
-
-# Cleaning feature names
-def clean_name(feature):
-    id = feature.find("<")
-    if id == -1:
-        return feature
-    fct = feature[id + 9 : id + 14].strip()
-    return feature[0:id] + fct
-
-
-feature_names = [
-    np.array([clean_name(x) for x in feature_names[i]]) for i in len(feature_names)
-]
-
-# Loading the labels
-feature_type = "feature_set"
-filepath = (
-    "../data/" + week_type + "-" + feature_type + "-" + course + "/feature_labels.csv"
+file_path = "../data/feature_names/"  # path to folder containing feature names.
+# Cleaning feature names for better representation. Change clean_name in datahelper for adaption to your feature sets.
+clean = False
+feature_names = load_feature_names(
+    feature_types,
+    file_path=file_path,
+    remove_obvious=remove_obvious,
+    clean=clean,
 )
-labels = pd.read_csv(filepath)["label-pass-fail"]
-labels[labels.shape[0]] = 1
-labels = np.concatenate(
-    ((1 - labels.values).reshape(-1, 1), (labels.values).reshape(-1, 1)), axis=1
-)
+
 
 # Loading the features
-feature_list = []
-selected_features = []
-num_weeks = 0
-n_features = 0
-for i, feature_type in enumerate(feature_types):
-    filepath = "../data/" + week_type + "-" + feature_type + "-" + course
-    feature_current = np.load(filepath + "/feature_values.npz")["feature_values"]
-    shape = feature_current.shape
-
-    # Remove student shape, competency strength, competency alignment
-    if feature_type == "marras_et_al" and remove_obvious:
-        feature_current = np.delete(feature_current, [0, 1, 6], axis=2)
-
-    shape = feature_current.shape
-    if i == 0:
-        num_weeks = shape[1]
-    nonNaN = (
-        shape[0] * shape[1]
-        - np.isnan(feature_current.reshape(-1, feature_current.shape[2])).sum(axis=0)
-        > 0
-    )
-    feature_current = feature_current[:, :, nonNaN]
-    selected = np.arange(shape[2])
-    selected = selected[nonNaN]
-    feature_current = fillNaN(feature_current)
-    nonZero = abs(feature_current.reshape(-1, feature_current.shape[2])).sum(axis=0) > 0
-    selected = selected[nonZero]
-    feature_current = feature_current[:, :, nonZero]
-    selected_features.append(feature_names[i][selected])
-    n_features += len(feature_names[i][selected])
-    features_min = feature_current.min(axis=0).reshape(-1)
-    features_max = feature_current.max(axis=0)
-    features_max = np.where(
-        features_max == 0, np.ones(features_max.shape), features_max
-    )
-    max_instance = 1.001 * features_max
-    feature_current = np.vstack(
-        [feature_current, max_instance.reshape((1,) + max_instance.shape)]
-    )
-    features_max = features_max.reshape(-1)
-    feature_norm = (feature_current.reshape(shape[0] + 1, -1) - features_min) / (
-        1.001 * features_max - features_min
-    )
-    feature_current = feature_norm.reshape(
-        -1, feature_current.shape[1], feature_current.shape[2]
-    )
-    feature_list.append(feature_current)
-
-features = np.concatenate(feature_list, axis=2)
-features = features.reshape(features.shape[0], -1)
+filepath = "../data/"
+# Dropping features with all NaNs or all Zeros.
+drop = False
+# Filling the NaNs. Change FillNaN in data_helper for adaption.
+fill = False
+# minmax normalization. See "details.txt" for more info.
+normalize = False
+features, selected_features, num_weeks, n_features = load_features(
+    filepath,
+    feature_types,
+    week_type,
+    course,
+    feature_names,
+    remove_obvious=remove_obvious,
+    fill=fill,
+    drop=drop,
+    normalize=normalize,
+)
 SHAPE = features.shape
-print(features.shape)
-print("course: ", course)
-print("week_type: ", week_type)
-print("feature_type: ", feature_types)
-print(selected_features)
 
-selected_features = {
-    "boroujeni_et_al": list(selected_features[0]),
-    "chen_cui": list(selected_features[1]),
-    "marras_et_al": list(selected_features[2]),
-    "lalle_conati": list(selected_features[3]),
-}
-
-feature_names = []
-final_features = []
-for feature_type in feature_types:
-    [final_features.append(x) for x in selected_features[feature_type]]
-for i in np.arange(num_weeks):
-    feature_type_name_with_weeks = [
-        (x + "_InWeek" + str(i + 1)) for x in final_features
-    ]
-    feature_names.append(feature_type_name_with_weeks)
-feature_names = np.concatenate(feature_names, axis=0)
-feature_names = feature_names.reshape(-1)
-
+# Loading the labels
+filepath = (
+    "../data/"
+    + week_type
+    + "-"
+    + feature_types[0]
+    + "-"
+    + course
+    + "/feature_labels.csv"
+)
+labels = load_labels(filepath, cem=True, normalize=normalize)
+# Adding week number to feature_names
+feature_names = add_week(selected_features, feature_types, num_weeks, week_type)
 
 f = pd.DataFrame(features, columns=feature_names)
-
 s_f = list(selected_features.values())
 num_features = len([feature for feature_group in s_f for feature in feature_group])
 
