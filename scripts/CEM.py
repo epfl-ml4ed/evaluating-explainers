@@ -31,8 +31,8 @@ import time
 
 # Edit here for other courses, parameters
 week_type = "eq_week"
-feature_types = ["boroujeni_et_al", "chen_cui", "marras_et_al", "lalle_conati"]
-course = "microcontroleurs_003"
+feature_types = ["feature_set"]
+course = "toy_course"
 # Remove features directly related to student success
 remove_obvious = True
 
@@ -47,21 +47,6 @@ def fillNaN(feature):
     return feature
 
 
-# Loading the features
-feature_list = []
-feature_type_list = []
-for feature_type in feature_types:
-    filepath = "./data/" + week_type + "-" + feature_type + "-" + course
-    feature_current = np.load(filepath + "/feature_values.npz")["feature_values"]
-    print(feature_current.shape)
-    feature_norm = feature_current.reshape(-1, feature_current.shape[2])
-    print(feature_norm.shape)
-    feature_type_list.append(pd.DataFrame(feature_norm))
-    feature_list.append(feature_type_list)
-print("course: ", course)
-print("week_type: ", week_type)
-print("feature_type: ", feature_types)
-
 # Loading feature names
 feature_names = []
 for feature_type in feature_types:
@@ -70,7 +55,7 @@ for feature_type in feature_types:
     feature_type_name = feature_type_name.values.reshape(-1)
     feature_names.append(feature_type_name)
 
-# Dropping student_shape, competency strength, competency alignment
+# Dropping student_shape, competency strength, competency alignment from feature names
 if remove_obvious:
     new_marras = feature_names[2][[2, 3, 4, 5]]
     feature_names[2] = new_marras
@@ -85,31 +70,31 @@ def clean_name(feature):
 
 
 feature_names = [
-    np.array([clean_name(x) for x in feature_names[0]]),
-    np.array([clean_name(x) for x in feature_names[1]]),
-    np.array([clean_name(x) for x in feature_names[2]]),
-    np.array([clean_name(x) for x in feature_names[3]]),
+    np.array([clean_name(x) for x in feature_names[i]]) for i in len(feature_names)
 ]
 
-# loading the labels
-feature_type = "boroujeni_et_al"
+# Loading the labels
+feature_type = "feature_set"
 filepath = (
-    "./data/" + week_type + "-" + feature_type + "-" + course + "/feature_labels.csv"
+    "../data/" + week_type + "-" + feature_type + "-" + course + "/feature_labels.csv"
 )
 labels = pd.read_csv(filepath)["label-pass-fail"]
 labels[labels.shape[0]] = 1
-y = labels.values
+labels = np.concatenate(
+    ((1 - labels.values).reshape(-1, 1), (labels.values).reshape(-1, 1)), axis=1
+)
+
 # Loading the features
 feature_list = []
 selected_features = []
 num_weeks = 0
 n_features = 0
 for i, feature_type in enumerate(feature_types):
-    filepath = "./data/" + week_type + "-" + feature_type + "-" + course
+    filepath = "../data/" + week_type + "-" + feature_type + "-" + course
     feature_current = np.load(filepath + "/feature_values.npz")["feature_values"]
     shape = feature_current.shape
 
-    # remove student shape, competency strength, competency alignment
+    # Remove student shape, competency strength, competency alignment
     if feature_type == "marras_et_al" and remove_obvious:
         feature_current = np.delete(feature_current, [0, 1, 6], axis=2)
 
@@ -176,12 +161,9 @@ for i in np.arange(num_weeks):
 feature_names = np.concatenate(feature_names, axis=0)
 feature_names = feature_names.reshape(-1)
 
-labels = np.concatenate(((1 - y).reshape(-1, 1), y.reshape(-1, 1)), axis=1)
-labels.shape
 
 f = pd.DataFrame(features, columns=feature_names)
 
-# num_features = len([selected_features])
 s_f = list(selected_features.values())
 num_features = len([feature for feature_group in s_f for feature in feature_group])
 
@@ -251,6 +233,7 @@ def bidirectional_lstm(
     }
     scores = evaluate(
         None,
+        labels,
         x_test,
         y_test,
         week_type,
@@ -287,13 +270,12 @@ def plot_history(history, file_name):
 
 def evaluate(
     model,
+    labels,
     x_test,
     y_test,
     week_type,
     feature_type,
     course,
-    model_name=None,
-    model_params=None,
     y_pred=None,
 ):
     scores = {}
@@ -308,12 +290,9 @@ def evaluate(
     scores["feature_type"] = feature_type
     scores["week_type"] = week_type
     scores["course"] = course
-    scores["data_balance"] = sum(y) / len(y)
+    scores["data_balance"] = sum(labels[:, 1]) / len(labels[:, 1])
     return scores
 
-
-features.shape
-labels.shape
 
 train_size = 0.8
 x_train, x_rem, y_train, y_rem = train_test_split(
@@ -359,8 +338,7 @@ print(run_name)
 bilstm = load_model("./lstm_bi_" + course + "_cem")
 
 
-def pn_all(num_instances, features, feature_names):
-    mode = "PN"  # 'PN' (pertinent negative) or 'PP' (pertinent positive)
+def CEM_all(num_instances, features, mode="PN"):
     shape = (1,) + features.shape[1:]  # instance shape
     kappa = 0.0  # minimum difference needed between the prediction probability for the perturbed instance on the
     # class predicted by the original instance and the max probability on the other classes
@@ -415,77 +393,12 @@ def pn_all(num_instances, features, feature_names):
     return explanations, changes
 
 
-def pp_all(num_instances, features, feature_names):
-    mode = "PP"  # 'PN' (pertinent negative) or 'PP' (pertinent positive)
-    shape = (1,) + features.shape[1:]  # instance shape
-    kappa = 0.0  # minimum difference needed between the prediction probability for the perturbed instance on the
-    # class predicted by the original instance and the max probability on the other classes
-    # in order for the first loss term to be minimized
-    beta = 0.1  # weight of the L1 loss term
-    gamma = 100  # weight of the optional auto-encoder loss term
-    c_init = 1.0  # initial weight c of the loss term encouraging to predict a different class (PN) or
-    # the same class (PP) for the perturbed instance compared to the original instance to be explained
-    c_steps = 10  # nb of updates for c
-    max_iterations = 1000  # nb of iterations per value of c
-    feature_range = (
-        features.min(axis=0),
-        features.max(axis=0),
-    )  # feature range for the perturbed instance
-    clip = (-1000.0, 1000.0)  # gradient clipping
-    lr = 1e-2  # initial learning rate
-    no_info_val = (
-        -1.0
-    )  # a value, float or feature-wise, which can be seen as containing no info to make a prediction
-    # perturbations towards this value means removing features, and away means adding features
-    # for our MNIST images, the background (-0.5) is the least informative,
-    # so positive/negative perturbations imply adding/removing features
-    cem = CEM(
-        bilstm,
-        mode,
-        shape,
-        kappa=kappa,
-        beta=beta,
-        feature_range=feature_range,
-        gamma=gamma,
-        ae_model=None,
-        max_iterations=max_iterations,
-        c_init=c_init,
-        c_steps=c_steps,
-        learning_rate_init=lr,
-        clip=clip,
-        no_info_val=no_info_val,
-    )
-    changes = []
-    for i in num_instances:
-        try:
-            X = features[i].reshape((1,) + features[0].shape)
-            explanation = cem.explain(X)
-            change = explanation.PP - X
-            print(f"counterfactuals generated for instance {i}")
-            changes.append(change)
-        except TypeError:
-            print(f"Error occured for instance {i}")
-            print(change)
-    return changes
-
-
-# In[51]:
-
-
 num_instances = np.load("uniform_" + course + ".npy")
 
-
-# In[52]:
-
-
 t1 = time.time()
-explanation, changes = pn_all(num_instances, features, feature_names)
+explanation, changes = CEM_all(num_instances, features, mode="PN")
 t2 = time.time()
 print(f"time taken: {(t2-t1)/60.0} minutes")
-
-
-# In[53]:
-
 
 instances = features[num_instances]
 np.save(
@@ -493,38 +406,17 @@ np.save(
     np.array(changes).reshape(len(num_instances), -1),
 )
 
-
-# In[54]:
-
-
 pns = np.array([explanation[i].PN for i in range(len(explanation))]).reshape(
     len(num_instances), -1
 )
 np.save("uniform_eq_results/CEM/" + course + "/pns", pns)
 
-
-# In[55]:
-
-
 np.save("uniform_eq_results/CEM/" + course + "/instances", instances)
-
-
-# In[56]:
-
 
 sds = pd.DataFrame(features, columns=feature_names).describe().loc["std", :]
 
 
-# In[58]:
-
-
-np.array(changes).shape
-
-
-# In[59]:
-
-
-# getting importance scores
+# Getting importance scores
 
 diffs = pd.DataFrame(
     np.array(changes).reshape(len(num_instances), -1), columns=feature_names
@@ -532,15 +424,5 @@ diffs = pd.DataFrame(
 for col in diffs.columns:
     diffs[col] = diffs[col].apply(lambda x: np.abs(x * sds[col]))
 
-
-# In[60]:
-
-
 diffs.insert(0, "exp_num", num_instances)
 diffs.to_csv("uniform_eq_results/CEM/" + course + "/importances.csv")
-
-
-# In[61]:
-
-
-diffs
