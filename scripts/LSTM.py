@@ -5,8 +5,6 @@
 #
 
 # ## Importing the needed libraries:
-
-from locale import normalize
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -25,7 +23,7 @@ import matplotlib.pyplot as pyplot
 import seaborn as sns
 import time
 import json
-from data_helper import load_features, load_labels
+from data_helper import load_features, load_labels, load_feature_names
 
 # set week type, feature types, and courses here
 week_type = "eq_week"
@@ -41,6 +39,12 @@ if cem:
 remove_obvious = True
 # normalize
 normalize = False
+# clean names
+clean = False
+# fill nans
+fill = False
+# drop all zeros/nans
+drop  = False
 # set number of epochs to train models for each course:
 params = {}
 for course in courses:
@@ -200,7 +204,12 @@ features = {}
 selected_features = {}
 
 for course in courses:
-
+    feature_names = load_feature_names(
+        feature_types,
+        file_path="../data/feature_names/",
+        remove_obvious=remove_obvious,
+        clean=clean,
+    )
     filepath = (
         "../data/"
         + week_type
@@ -211,7 +220,17 @@ for course in courses:
         + "/feature_labels.csv"
     )
     labels[course] = load_labels(filepath, cem=cem, normalize=normalize)
-    feats, sel_feats, num_weeks, num_features = load_features(course)
+    feats, sel_feats, num_weeks, num_features = load_features(
+        filepath,
+        feature_types,
+        week_type,
+        course,
+        feature_names,
+        remove_obvious=remove_obvious,
+        fill=fill,
+        drop=drop,
+        normalize=normalize,
+    )
     features[course] = feats
     selected_features[course] = sel_feats
     file = "selected_features/" + course + ".json"
@@ -223,7 +242,6 @@ for course in courses:
 # training models
 
 for course in courses:
-
     fts = features[course].copy()
     target = labels[course]
     fts = fts.reshape(fts.shape[0], -1)
