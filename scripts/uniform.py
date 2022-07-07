@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 import tensorflow.keras as keras
-import json
-from data_helper import load_features, load_labels
+from data_helper import load_features, load_labels, load_feature_names, add_week
 
 week_type = "eq_week"
 feature_types = ["feature_set"]
@@ -10,182 +9,70 @@ course = "toy_course"
 num_f = 50
 num_p = 50
 remove_obvious = True
-
-# Loading the labels
-feature_type = "boroujeni_et_al"
-filepath = (
-    "../data/" + week_type + "-" + feature_type + "-" + course + "/feature_labels.csv"
-)
-labels = load_labels(filepath)
-
 # Loading feature names
-feature_names = []
-for feature_type in feature_types:
-    filepath = "./scripts/feature_names/" + feature_type + ".csv"
-    if feature_type == "lalle_connati":
-        filepath = "./scripts/feature_names/lalle_conati.csv"
-    feature_type_name = pd.read_csv(filepath, header=None)
-    feature_type_name = feature_type_name.values.reshape(-1)
-    feature_names.append(feature_type_name)
-
-if remove_obvious:
-    new_marras = feature_names[2][[2, 3, 4, 5]]
-    feature_names[2] = new_marras
-
+file_path = "../data/feature_names/"  # path to folder containing feature names.
+# Cleaning feature names for better representation. Change clean_name in datahelper for adaption to your feature sets.
+clean = False
+feature_names = load_feature_names(
+    feature_types,
+    file_path=file_path,
+    remove_obvious=remove_obvious,
+    clean=clean,
+)
 # Loading the features
-feature_list = []
-selected_features = []
-n_weeks = 0
-n_features = 0
-for i, feature_type in enumerate(feature_types):
-    filepath = "./data/" + week_type + "-" + feature_type + "-" + course
-    feature_current = np.load(filepath + "/feature_values.npz")["feature_values"]
-
-    if remove_obvious and feature_type == "marras_et_al":
-        feature_current = np.delete(feature_current, [0, 1, 6], axis=2)
-
-    shape = feature_current.shape
-    if i == 0:
-        n_weeks = shape[1]
-    nonNaN = (
-        shape[0] * shape[1]
-        - np.isnan(feature_current.reshape(-1, feature_current.shape[2])).sum(axis=0)
-        > 0
-    )
-    feature_current = feature_current[:, :, nonNaN]
-    selected = np.arange(shape[2])
-    selected = selected[nonNaN]
-    feature_current = fillNaN(feature_current)
-    nonZero = abs(feature_current.reshape(-1, feature_current.shape[2])).sum(axis=0) > 0
-    selected = selected[nonZero]
-    feature_current = feature_current[:, :, nonZero]
-    selected_features.append(feature_names[i][selected])
-    n_features += len(feature_names[i][selected])
-    ##### Normalization with min-max. Added the artifical max (1.001 or max) for solving the min max problem
-    features_min = feature_current.min(axis=0).reshape(-1)
-    features_max = feature_current.max(axis=0)
-    features_max = np.where(
-        features_max == 0, np.ones(features_max.shape), features_max
-    )
-    max_instance = 1.001 * features_max
-    feature_current = np.vstack(
-        [feature_current, max_instance.reshape((1,) + max_instance.shape)]
-    )
-    features_max = features_max.reshape(-1)
-    feature_norm = (feature_current.reshape(shape[0] + 1, -1) - features_min) / (
-        1.001 * features_max - features_min
-    )
-    feature_current = feature_norm.reshape(
-        -1, feature_current.shape[1], feature_current.shape[2]
-    )
-    feature_list.append(feature_current)
-features = np.concatenate(feature_list, axis=2)
-features = features.reshape(features.shape[0], -1)
-features = pd.DataFrame(features)
+filepath = "../data/"
+# Dropping features with all NaNs or all Zeros.
+drop = False
+# Filling the NaNs. Change FillNaN in data_helper for adaption.
+fill = False
+# minmax normalization. See "details.txt" for more info.
+normalize = False
+features, selected_features, num_weeks, n_features = load_features(
+    filepath,
+    feature_types,
+    week_type,
+    course,
+    feature_names,
+    remove_obvious=remove_obvious,
+    fill=fill,
+    drop=drop,
+    normalize=normalize,
+)
 SHAPE = features.shape
 
-print(features.shape)
-print("course: ", course)
-print("week_type: ", week_type)
-print("feature_type: ", feature_types)
-print(selected_features)
-# calculate the number of features
-n_features = sum([len(x) for x in selected_features])
-
-# make feature names more readable
-# ex: time_in__problem_<function sum at 0x7f3bd02cc9d0> -> time_in_problem_sum
-def clean_name(feature):
-    id = feature.find("<")
-    if id == -1:
-        return feature
-    fct = feature[id + 9 : id + 14].strip()
-    return feature[0:id] + fct
-
-
-selected_features = [
-    np.array([clean_name(x) for x in selected_features[0]]),
-    np.array([clean_name(x) for x in selected_features[1]]),
-    np.array([clean_name(x) for x in selected_features[2]]),
-    np.array([clean_name(x) for x in selected_features[3]]),
-]
-
-selected_features = {
-    "boroujeni_et_al": list(selected_features[0]),
-    "chen_cui": list(selected_features[1]),
-    "marras_et_al": list(selected_features[2]),
-    "lalle_conati": list(selected_features[3]),
-}
-print(selected_features)
-file = "selected_features/" + course + "_after.json"
-with open(file, "w") as f:
-    json.dump(selected_features, f)
-
-num_feature_type = []
-for feature_type in feature_types:
-    num_feature_type.append(len(selected_features[feature_type]))
-print(num_feature_type)
-
-# Loading feature names and transforming them to 2D format.
-feature_names = []
-final_features = []
-for feature_type in feature_types:
-    [final_features.append(x) for x in selected_features[feature_type]]
-for i in np.arange(n_weeks):
-    feature_type_name_with_weeks = [
-        (x + "_InWeek" + str(i + 1)) for x in final_features
-    ]
-    feature_names.append(feature_type_name_with_weeks)
-feature_names = np.concatenate(feature_names, axis=0)
-feature_names = feature_names.reshape(-1)
-# print(feature_names)
-features.columns = feature_names
-
-
-# ## Making a predict_proba
-features_min = features.min(axis=0)
-features_max = features.max(axis=0)
-features_max = np.where(features_max == 0, np.ones(features_max.shape), features_max)
-
-# This module transforms our data to the 2D format biLSTM was trained with.
-def transform_x(
-    x, num_feature_type, num_weeks, features_min, features_max, normal=True
-):
-    return np.array(x).reshape((x.shape[0], x.shape[1]))
-
-
-features_min = features.min(axis=0)
-features_max = features.max(axis=0)
-
+# Loading the labels
+filepath = (
+    "../data/"
+    + week_type
+    + "-"
+    + feature_types[0]
+    + "-"
+    + course
+    + "/feature_labels.csv"
+)
+labels = load_labels(filepath, normalize=normalize)
+# Adding week number to feature_names
+feature_names = add_week(selected_features, feature_types, num_weeks, week_type)
+features = pd.DataFrame(features, columns=feature_names)
 # EDIT HERE FOR OTHER MODELS
 model_name = "models/lstm_bi_" + course + "_new"
 loaded_model = keras.models.load_model(model_name)
 
-
-############################################################################################################
-prediction = loaded_model.predict(
-    transform_x(
-        np.array(features),
-        num_feature_type,
-        n_weeks,
-        features_min=features_min,
-        features_max=features_max,
-    )
-)
+prediction = loaded_model.predict(np.array(features))
 ###################
-print(prediction.shape, y.shape, features.shape)
 features_with_prediction = features.copy()
 features_with_prediction["prediction"] = prediction
-features_with_prediction["real_label"] = y
+features_with_prediction["real_label"] = labels
 features_with_prediction["abs_difference"] = abs(
     features_with_prediction["prediction"].values
     - features_with_prediction["real_label"].values
 )
 ###################
-failed_instances = y > 0
+failed_instances = labels > 0
 failed = features_with_prediction.iloc[failed_instances]
 failed = failed.sort_values(by="abs_difference")
 ###################
-passed_instances = y < 1
+passed_instances = labels < 1
 passed = features_with_prediction.iloc[passed_instances]
 passed = passed.sort_values(by="abs_difference")
 #################
