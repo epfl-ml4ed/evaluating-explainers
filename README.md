@@ -4,8 +4,6 @@ This repository is the official implementation of the EDM 2022 paper entitled ["
 
 Experiments are located in `scripts/`, corresponding directly to the experimental methodology mentioned in the paper. 
 
-> **July 1, 2022: This version of the evaluating-explainers code is not fully cleaned and is subject to refactoring in the next months.**
-
 ## Project overview
 
 We implement five state-of-the-art methodologies for explaining black-box machine learning models (LIME, PermutationSHAP, KernelSHAP, DiCE, CEM) on the downstream task of student performance prediction for five massive open online courses. Our experiments demonstrate that the families of explainers **do not agree** with each other on feature importance for the same Bidirectional LSTM models with the same representative set of students. 
